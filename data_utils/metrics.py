@@ -1,5 +1,5 @@
 from .constants import punktuation_mark_re, direct_speech_re, SSP
-from .utils import Parse, morph
+from .utils import SentenceAnalyzer
 from typing import List
 from nltk import sent_tokenize, word_tokenize
 from lazy_property import LazyProperty
@@ -11,12 +11,10 @@ class Word:
     POS: str
     normal_form: str
 
-    def __init__(self, word: str):
+    def __init__(self, word: str, pos: str):
         self.symbols = word
         self.syllables = SSP.tokenize(word)
-        analysis: Parse = morph.parse(word)
-        self.normal_form = analysis.normal_form
-        self.POS = str(analysis.tag.POS)
+        self.POS = pos
 
     def length(self, kind="sym"):
         if kind == 'sym':
@@ -45,14 +43,13 @@ class Sentence:
             setattr(self, name, bool(expression.match(self.text)))
 
     def __parse_words(self):
-        for word_str in word_tokenize(self.text, 'russian'):
-            if word_str not in DICT:
-                word = Word(word_str)
-                DICT[word_str] = word
+        for text, pos in SentenceAnalyzer(self.text):
+            if text not in DICT:
+                word = Word(text.lower(), pos)
+                DICT[text.lower()] = word
             else:
-                word = DICT[word_str]
-            if word.POS != 'None':
-                self.words.append(word)
+                word = DICT[text.lower()]
+            self.words.append(word)
 
     def __len__(self):
         return len(self.words)
@@ -115,16 +112,16 @@ class Text:
     @property
     def verb_to_all_ratio(self):
         return sum(
-            sent.part_of_speech_count(["VERB", "INFN", "PRTF", "PRTS", "GRND"]) / len(sent) for sent in self if
+            sent.part_of_speech_count(["V"]) / len(sent) for sent in self if
             len(sent)) / self.sentence_count
 
     @property
     def noun_to_all_ratio(self):
-        return sum(sent.part_of_speech_count(["NOUN"]) / len(sent) for sent in self if len(sent)) / self.sentence_count
+        return sum(sent.part_of_speech_count(["S"]) / len(sent) for sent in self if len(sent)) / self.sentence_count
 
     @property
     def ad_to_all_ratio(self):
-        return sum(sent.part_of_speech_count(["ADVB", "ADJF", "ADJS"]) / len(sent) for sent in self if
+        return sum(sent.part_of_speech_count(["A", "ADV", "ADVPRO"]) / len(sent) for sent in self if
                    len(sent)) / self.sentence_count
 
     @property
