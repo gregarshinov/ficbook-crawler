@@ -22,6 +22,8 @@ class Novel(Base):
     like_count = Column(Integer)
     text = Column(String)
     date_added = Column(Date)
+    last_updated = Column(Date)
+    direction = Column(Integer)
 
     sentence_count = Column(Integer)
     sent_word_count_average = Column(Float)

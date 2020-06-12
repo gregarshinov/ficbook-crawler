@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from . import Session
 
 @contextmanager
-def session_scope():
+def session_scope() -> Session:
     """Provide a transactional scope around a series of operations."""
     session = Session()
     try:

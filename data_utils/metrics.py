@@ -85,6 +85,14 @@ class Text:
         self.text = text_string
         self.sentences = []
         self.__parse()
+        self.verb_to_all_ratio = .0
+        self.noun_to_all_ratio = .0
+        self.ad_to_all_ratio = .0
+        self.sent_syl_average =.0
+        self.word_average_sym_count = .0
+        self.word_average_syl_count = .0
+        self.exclamative_sent_word_ratio = .0
+        self.interrogative_sent_word_ratio = .0
 
     def __parse(self):
         for sent in sent_tokenize(self.text, 'russian'):
@@ -103,46 +111,12 @@ class Text:
 
     @property
     def sent_word_count_average(self):
-        return sum(len(sent) for sent in self) / len(self)
+        return self.word_count / len(self)
 
     @LazyProperty
     def word_count(self):
         return sum(len(sent) for sent in self)
 
-    @property
-    def verb_to_all_ratio(self):
-        return sum(
-            sent.part_of_speech_count(["V"]) / len(sent) for sent in self if
-            len(sent)) / self.sentence_count
-
-    @property
-    def noun_to_all_ratio(self):
-        return sum(sent.part_of_speech_count(["S"]) / len(sent) for sent in self if len(sent)) / self.sentence_count
-
-    @property
-    def ad_to_all_ratio(self):
-        return sum(sent.part_of_speech_count(["A", "ADV", "ADVPRO"]) / len(sent) for sent in self if
-                   len(sent)) / self.sentence_count
-
-    @property
-    def sent_syl_average(self):
-        return sum(sent.syllable_count / len(sent) for sent in self if len(sent)) / self.sentence_count
-
-    @property
-    def word_average_sym_count(self):
-        return sum(word.length('sym') / len(sent) for sent in self for word in sent if len(sent)) / self.word_count
-
-    @property
-    def word_average_syl_count(self):
-        return sum(word.length('syl') / len(sent) for sent in self for word in sent if len(sent)) / self.word_count
-
-    @property
-    def exclamative_sent_word_ratio(self):
-        return sum(len(sent) for sent in self if sent.is_exclamative) / self.word_count
-
-    @property
-    def interrogative_sent_word_ratio(self):
-        return sum(len(sent) for sent in self if sent.is_interrogative) / self.word_count
 
     @property
     def direct_speech_word_ratio(self):
@@ -150,3 +124,35 @@ class Text:
         for sent in self:
             direct_speech_occurences.extend([Sentence(speech) for speech in direct_speech_re.findall(str(sent))])
         return sum(len(sent) for sent in direct_speech_occurences if len(sent)) / self.word_count
+
+    def count_metrics(self):
+        verbs = .0
+        nouns = .0
+        ad = .0
+        sent_syl = .0
+        word_av_sym = .0
+        word_av_syl = .0
+        exclamative_sum = 0
+        interrogative_sum = 0
+        for sent in self:
+            if len(sent):
+                verbs += sent.part_of_speech_count(["V"]) / len(sent)
+                nouns += sent.part_of_speech_count(["S"]) / len(sent)
+                ad += sent.part_of_speech_count(["A", "ADV", "ADVPRO"]) / len(sent)
+                sent_syl += sent.syllable_count / len(sent)
+                for word in sent:
+                    word_av_sym += word.length('sym') / len(sent)
+                    word_av_syl += word.length('syl') / len(sent)
+                if sent.is_exclamative:
+                    exclamative_sum += len(sent)
+                if sent.is_interrogative:
+                    interrogative_sum += len(sent)
+
+        self.verb_to_all_ratio = verbs / len(self)
+        self.noun_to_all_ratio = nouns / len(self)
+        self.ad_to_all_ratio = ad / len(self)
+        self.sent_syl_average = sent_syl / len(self)
+        self.word_average_sym_count = word_av_sym / self.word_count
+        self.word_average_syl_count = word_av_syl / self.word_count
+        self.exclamative_sent_word_ratio = exclamative_sum / self.word_count
+        self.interrogative_sent_word_ratio = interrogative_sum / self.word_count

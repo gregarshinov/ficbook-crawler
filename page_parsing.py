@@ -3,6 +3,8 @@ from typing import List, Dict, Any
 import requests
 from bs4 import BeautifulSoup
 import re
+from datetime import datetime
+import dateparser
 
 
 def fetch_catalogue_page(idx: int = None) -> str:
@@ -24,6 +26,15 @@ def get_dd(search_term: str, soup: BeautifulSoup) -> str:
     el = soup.find_all('dt', text=search_term, limit=1)[0].find_all_next('dd', limit=1)[0]  # type: BeautifulSoup
     text = getattr(el.strong or el.span, 'text', None)
     return text
+
+
+def get_dates(soup: BeautifulSoup) -> Dict[str, datetime]:
+    date_els = soup.find_all('span', title=re.compile(r'\d{2}\s\w+\s\d{4}'))
+    dates = sorted([dateparser.parse(date_el['title']) for date_el in date_els])
+    if dates:
+        return {"date_added": dates[0], "last_updated": dates[-1]}
+    else:
+        return {"date_added": datetime.today(), "last_updated": datetime.today()}
 
 
 def get_fic_text(soup: BeautifulSoup):
@@ -59,6 +70,7 @@ def parse_fic(page_html):
         description = description_el.find_all_next('div', limit=1)[0].text
 
     text = "\n".join(get_fic_text(soup))
+    dates = get_dates(soup)
 
     return {'like_count': likes.strip('\n '),
             'pairing_and_characters': pairing.strip('\n '),
@@ -69,4 +81,6 @@ def parse_fic(page_html):
             'author_notes': author_notes.strip('\n '),
             'description': description.strip('\n '),
             'author': author,
-            'text': text}
+            'text': text,
+            'date_added': dates['date_added'],
+            'last_updated': dates['last_updated']}
