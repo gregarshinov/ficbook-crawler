@@ -37,3 +37,8 @@ class Novel(Base):
     exclamative_sent_word_ratio = Column(Float)
     interrogative_sent_word_ratio = Column(Float)
     direct_speech_word_ratio = Column(Float)
+
+    forecast = Column(Float)
+    gunning_fog = Column(Float)
+    smog = Column(Float)
+    flesch = Column(Float)

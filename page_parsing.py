@@ -23,7 +23,11 @@ def get_readlinks(page_html: str) -> List[Dict[str, str]]:
 
 
 def get_dd(search_term: str, soup: BeautifulSoup) -> str:
-    el = soup.find_all('dt', text=search_term, limit=1)[0].find_all_next('dd', limit=1)[0]  # type: BeautifulSoup
+    els = soup.find_all('dt', text=search_term, limit=1)
+    if els:
+        el = els[0].find_all_next('dd', limit=1)[0]  # type: BeautifulSoup
+    else:
+        return ''
     text = getattr(el.strong or el.span, 'text', None)
     return text
 

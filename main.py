@@ -32,7 +32,6 @@ def main(page_range=(0, 30_000)):
 
 
 def get_find_page(direction_id: int = 1, page: int = 1) -> str:
-
     params = {
         'fandom_filter': 'originals',
         'fandom_group_id': 1,
@@ -77,7 +76,8 @@ def crawl_find(directions, page_range=(0, 50), max_count=500):
                     already_exist_obj = sess.query(Novel.url).filter(
                         Novel.url.in_([a['url'] for a in fanfic_addresses])).all()
                     already_exist_lst = [o.url for o in already_exist_obj]
-                for idx, fic_address in enumerate([fa for fa in fanfic_addresses if fa['url'] not in already_exist_lst]):
+                for idx, fic_address in enumerate(
+                        [fa for fa in fanfic_addresses if fa['url'] not in already_exist_lst]):
                     if count <= max_count:
                         fic_page = requests.get(fic_address['url'])
                         result = parse_fic(fic_page.content.decode())
@@ -99,13 +99,17 @@ def crawl_find(directions, page_range=(0, 50), max_count=500):
                                 'sent_syl_average': text.sent_syl_average,
                                 'sentence_count': text.sentence_count,
                                 'sent_word_count_average': text.sent_word_count_average,
+                                'forecast': text.forecast,
+                                'smog': text.smog,
+                                'gunning_fog': text.gunning_fog,
+                                'flesch': text.flesch
                             }
                             result.update(metrics)
                         with session_scope() as sess:
                             sess.add(Novel(**result))
                             print(f"Text {idx}")
                         count += 1
-                        # time.sleep(random.choice(TIME_INTERVALS))
+                        time.sleep(random.choice(TIME_INTERVALS))
                     else:
                         break
             else:
@@ -168,7 +172,45 @@ def calculate_metrics():
                         Novel.sentence_count: text.sentence_count,
                         Novel.sent_word_count_average: text.sent_word_count_average,
                         Novel.date_added: dates.get('created_at').date(),
-                        Novel.last_updated: dates.get('last_updated').date()
+                        Novel.last_updated: dates.get('last_updated').date(),
+                        Novel.forecast: text.forecast,
+                        Novel.smog: text.smog,
+                        Novel.gunning_fog: text.gunning_fog,
+                        Novel.flesch: text.flesch
+                    }
+                    session.query(Novel).filter(Novel.id == novel.id).update(metrics)
+                    print("Done")
+                else:
+                    print("Skipping")
+
+
+def recalculate_metrics():
+    with session_scope() as query_session:
+        novels = query_session.query(Novel).filter(and_(Novel.text.isnot(None),
+                                                        Novel.rating.isnot(None))).all()
+        for novel in novels:
+            print(novel.title)
+            with session_scope() as session:
+                text = Text(novel.text)
+                if text.word_count:
+                    text.count_metrics()
+                    metrics = {
+                        Novel.word_count: text.word_count,
+                        Novel.ad_to_all_ratio: text.ad_to_all_ratio,
+                        Novel.direct_speech_word_ratio: text.direct_speech_word_ratio,
+                        Novel.exclamative_sent_word_ratio: text.exclamative_sent_word_ratio,
+                        Novel.interrogative_sent_word_ratio: text.interrogative_sent_word_ratio,
+                        Novel.word_average_sym_count: text.word_average_sym_count,
+                        Novel.word_average_syl_count: text.word_average_syl_count,
+                        Novel.noun_to_all_ratio: text.noun_to_all_ratio,
+                        Novel.verb_to_all_ratio: text.verb_to_all_ratio,
+                        Novel.sent_syl_average: text.sent_syl_average,
+                        Novel.sentence_count: text.sentence_count,
+                        Novel.sent_word_count_average: text.sent_word_count_average,
+                        Novel.forecast: text.forecast,
+                        Novel.smog: text.smog,
+                        Novel.gunning_fog: text.gunning_fog,
+                        Novel.flesch: text.flesch
                     }
                     session.query(Novel).filter(Novel.id == novel.id).update(metrics)
                     print("Done")
@@ -177,5 +219,4 @@ def calculate_metrics():
 
 
 if __name__ == '__main__':
-    crawl_find([1, 2, 3, 4, 5])
-    # main((6, 30_000))
+    crawl_find([5])
