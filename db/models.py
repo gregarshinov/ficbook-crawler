@@ -25,15 +25,22 @@ class Novel(Base):
     last_updated = Column(Date)
     direction = Column(Integer)
 
-    sentence_count = Column(Integer)
-    sent_word_count_average = Column(Float)
-    word_count = Column(Integer)
+    total_sents = Column(Integer)
+    total_words = Column(Integer)
+    total_syl = Column(Integer)
+    total_sym = Column(Integer)
+
+    sent_in_words_average_len = Column(Float)
+    sent_in_syl_average_len = Column(Float)
+    sent_sym_average_len = Column(Float)
+
+    word_in_sym_average_len = Column(Float)
+    word_in_syl_average_len = Column(Float)
+
     verb_to_all_ratio = Column(Float)
     noun_to_all_ratio = Column(Float)
     ad_to_all_ratio = Column(Float)
-    sent_syl_average = Column(Float)
-    word_average_sym_count = Column(Float)
-    word_average_syl_count = Column(Float)
+
     exclamative_sent_word_ratio = Column(Float)
     interrogative_sent_word_ratio = Column(Float)
     direct_speech_word_ratio = Column(Float)

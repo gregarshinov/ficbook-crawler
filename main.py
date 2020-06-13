@@ -195,18 +195,26 @@ def recalculate_metrics():
                 if text.word_count:
                     text.count_metrics()
                     metrics = {
-                        Novel.word_count: text.word_count,
+                        Novel.total_words: text.word_count,
+                        Novel.total_sents: len(text),
+                        Novel.total_sym: text.total_symbols,
+                        Novel.total_syl: text.total_syllables,
+
                         Novel.ad_to_all_ratio: text.ad_to_all_ratio,
+                        Novel.noun_to_all_ratio: text.noun_to_all_ratio,
+                        Novel.verb_to_all_ratio: text.verb_to_all_ratio,
+
                         Novel.direct_speech_word_ratio: text.direct_speech_word_ratio,
                         Novel.exclamative_sent_word_ratio: text.exclamative_sent_word_ratio,
                         Novel.interrogative_sent_word_ratio: text.interrogative_sent_word_ratio,
-                        Novel.word_average_sym_count: text.word_average_sym_count,
-                        Novel.word_average_syl_count: text.word_average_syl_count,
-                        Novel.noun_to_all_ratio: text.noun_to_all_ratio,
-                        Novel.verb_to_all_ratio: text.verb_to_all_ratio,
-                        Novel.sent_syl_average: text.sent_syl_average,
-                        Novel.sentence_count: text.sentence_count,
-                        Novel.sent_word_count_average: text.sent_word_count_average,
+
+                        Novel.sent_sym_average_len: text.sent_sym_average_len,
+                        Novel.sent_in_syl_average_len: text.sent_in_syl_average_len,
+                        Novel.sent_in_words_average_len: text.sent_word_count_average,
+
+                        Novel.word_in_syl_average_len: text.word_in_syl_average_len,
+                        Novel.word_in_sym_average_len: text.word_in_sym_average_len,
+
                         Novel.forecast: text.forecast,
                         Novel.smog: text.smog,
                         Novel.gunning_fog: text.gunning_fog,
@@ -219,4 +227,4 @@ def recalculate_metrics():
 
 
 if __name__ == '__main__':
-    crawl_find([5])
+    recalculate_metrics()

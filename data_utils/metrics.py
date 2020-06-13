@@ -92,21 +92,24 @@ class Text:
     def __init__(self, text_string: str):
         self.text = text_string
         self.sentences = []
+        self.words = []
         self.__parse()
-        self.verb_to_all_ratio = .0
-        self.noun_to_all_ratio = .0
-        self.ad_to_all_ratio = .0
-        self.sent_syl_average = .0
-        self.word_average_sym_count = .0
-        self.word_average_syl_count = .0
-        self.exclamative_sent_word_ratio = .0
-        self.interrogative_sent_word_ratio = .0
-        self.len_sentence_in_symbols_average = .0
+        self.total_words = 0
+        self.total_symbols = 0
         self.total_syllables = 0
-        self.one_syl_words_ratio = .0
-        self.hard_words_ratio = .0
-        self.smog = .0
-        self.forecast = .0
+
+        self.total_verbs = 0
+        self.total_nouns = 0
+        self.total_ad = 0
+
+        self.total_exclamative = 0
+        self.total_interrogative = 0
+
+        self.total_hard_words = 0
+
+        self.flesch_sample_size = 100 if self.word_count >= 100 else self.word_count
+        self.smog_sample_size = 30 if self.word_count >= 30 else self.word_count
+        self.forecast_sample_size = 150 if self.word_count >= 150 else self.word_count
 
     def __parse(self):
         for sent in sent_tokenize(self.text, 'russian'):
@@ -120,14 +123,6 @@ class Text:
             yield sent
 
     @LazyProperty
-    def sentence_count(self):
-        return len(self)
-
-    @property
-    def sent_word_count_average(self): # sent_in_words_average_len: Average sentence length in words
-        return self.word_count / len(self)
-
-    @LazyProperty
     def word_count(self):
         return sum(len(sent) for sent in self)
 
@@ -139,56 +134,71 @@ class Text:
         return sum(len(sent) for sent in direct_speech_occurences if len(sent)) / self.word_count
 
     def count_metrics(self):
-        verbs = .0
-        nouns = .0
-        ad = .0
-        total_sent_syl_count = .0
-        total_symbols = .0
-        word_av_syl = .0
-        exclamative_sum = 0
-        interrogative_sum = 0
-        all_words = []
-        hard_words_count = 0
-        flesch_sample_size = 100 if self.word_count >= 100 else self.word_count
-        smog_sample_size = 30 if self.word_count >= 30 else self.word_count
-        forecast_sample_size = 150 if self.word_count >= 150 else self.word_count
-        total_syllables = 0
         for sent in filter(lambda s: len(s), self):
-            if len(sent):
-                verbs += sent.part_of_speech_count(["V"]) / len(sent)
-                nouns += sent.part_of_speech_count(["S"]) / len(sent)
-                ad += sent.part_of_speech_count(["A", "ADV", "ADVPRO"]) / len(sent)
-                total_sent_syl_count += sent.syllable_count
-                word_av_syl += sent.syllable_count
-                total_symbols += sent.symbol_count
-                if sent.is_exclamative:
-                    exclamative_sum += len(sent)
-                if sent.is_interrogative:
-                    interrogative_sum += len(sent)
-                for word in sent:
-                    all_words.append(word)
-                    total_syllables += word.length('syl')
-                    if word.length('syl') > 2:
-                        hard_words_count += 1
+            self.total_verbs += sent.part_of_speech_count(["V"])
+            self.total_nouns += sent.part_of_speech_count(["S"])
+            self.total_ad += sent.part_of_speech_count(["A", "ADV", "ADVPRO"])
+            self.total_syllables += sent.syllable_count
+            self.total_symbols += sent.symbol_count
+            if sent.is_exclamative:
+                self.total_exclamative += len(sent)
+            if sent.is_interrogative:
+                self.total_interrogative += len(sent)
+            for word in sent:
+                self.words.append(word)
+                if word.length('syl') > 2:
+                    self.total_hard_words += 1
 
-        self.total_syllables = total_syllables
-        self.verb_to_all_ratio = verbs / len(self)
-        self.noun_to_all_ratio = nouns / len(self)
-        self.ad_to_all_ratio = ad / len(self)
-        self.sent_syl_average = total_sent_syl_count / len(self)  # Average sentence length in syllables (len_sentence_in_syllables_average)
-        self.word_average_sym_count = total_symbols / self.word_count  # Average word length in symbols (len_word_in_sybols_average)
-        self.len_sentence_in_symbols_average = total_symbols / len(self)  # Average sentence length in symbols (len_sentence_in_symbols_average)
-        self.word_average_syl_count = word_av_syl / self.word_count
-        self.exclamative_sent_word_ratio = exclamative_sum / self.word_count
-        self.interrogative_sent_word_ratio = interrogative_sum / self.word_count
-        flesch_sampled_words = random.sample(all_words, flesch_sample_size)
-        self.one_syl_words_ratio = sum(
-            1 for word in flesch_sampled_words if word.length('syl') == 1) / flesch_sample_size
-        self.hard_words_ratio = hard_words_count / self.word_count
-        smog_sampled_words = random.sample(all_words, smog_sample_size)
-        self.smog = 3 + math.sqrt(sum(1 for word in smog_sampled_words if word.length('syl') > 2))
-        forecast_sampled_words = random.sample(all_words, forecast_sample_size)
-        self.forecast = 20 - (sum(1 for word in forecast_sampled_words if word.length('syl') == 1) / 10)
+
+    @property
+    def sent_in_words_average_len(self):
+        return self.word_count / len(self)
+
+    @property
+    def sent_in_syl_average_len(self):
+        return self.total_syllables / len(self)
+
+    @property
+    def sent_sym_average_len(self):
+        return self.total_symbols / len(self)
+
+    @property
+    def word_in_sym_average_len(self):
+        return self.total_symbols / self.word_count
+
+    @property
+    def word_in_syl_average_len(self):
+        return self.total_syllables / self.word_count
+
+    @property
+    def verb_to_all_ratio(self):
+        return self.total_verbs / self.word_count
+
+    @property
+    def noun_to_all_ratio(self):
+        return self.total_nouns / self.word_count
+
+    @property
+    def ad_to_all_ratio(self):
+        return self.total_ad / self.word_count
+
+    @property
+    def interrogative_sent_word_ratio(self):
+        return self.total_interrogative / self.word_count
+
+    @property
+    def exclamative_sent_word_ratio(self):
+        return self.total_exclamative / self.word_count
+
+    @property
+    def smog(self):
+        smog_sampled_words = random.sample(self.words, self.smog_sample_size)
+        return 3 + math.sqrt(sum(1 for word in smog_sampled_words if word.length('syl') > 2))
+
+    @property
+    def forecast(self):
+        forecast_sampled_words = random.sample(self.words, self.forecast_sample_size)
+        return 20 - (sum(1 for word in forecast_sampled_words if word.length('syl') == 1) / 10)
 
     @property
     def flesch(self):
@@ -196,4 +206,4 @@ class Text:
 
     @property
     def gunning_fog(self):
-        return 0.4 * (self.sent_word_count_average + self.hard_words_ratio)
+        return 0.4 * (self.sent_in_words_average_len + self.total_hard_words / self.word_count)
