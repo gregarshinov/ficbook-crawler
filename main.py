@@ -87,18 +87,26 @@ def crawl_find(directions, page_range=(0, 50), max_count=500):
                         if text.word_count:
                             text.count_metrics()
                             metrics = {
-                                'word_count': text.word_count,
+                                'total_words': text.word_count,
+                                'total_sents': len(text),
+                                'total_sym': text.total_symbols,
+                                'total_syl': text.total_syllables,
+
                                 'ad_to_all_ratio': text.ad_to_all_ratio,
+                                'noun_to_all_ratio': text.noun_to_all_ratio,
+                                'verb_to_all_ratio': text.verb_to_all_ratio,
+
                                 'direct_speech_word_ratio': text.direct_speech_word_ratio,
                                 'exclamative_sent_word_ratio': text.exclamative_sent_word_ratio,
                                 'interrogative_sent_word_ratio': text.interrogative_sent_word_ratio,
-                                'word_average_sym_count': text.word_average_sym_count,
-                                'word_average_syl_count': text.word_average_syl_count,
-                                'noun_to_all_ratio': text.noun_to_all_ratio,
-                                'verb_to_all_ratio': text.verb_to_all_ratio,
-                                'sent_syl_average': text.sent_syl_average,
-                                'sentence_count': text.sentence_count,
-                                'sent_word_count_average': text.sent_word_count_average,
+
+                                'sent_sym_average_len': text.sent_sym_average_len,
+                                'sent_in_syl_average_len': text.sent_in_syl_average_len,
+                                'sent_in_words_average_len': text.sent_in_words_average_len,
+
+                                'word_in_syl_average_len': text.word_in_syl_average_len,
+                                'word_in_sym_average_len': text.word_in_sym_average_len,
+
                                 'forecast': text.forecast,
                                 'smog': text.smog,
                                 'gunning_fog': text.gunning_fog,
@@ -210,7 +218,7 @@ def recalculate_metrics():
 
                         Novel.sent_sym_average_len: text.sent_sym_average_len,
                         Novel.sent_in_syl_average_len: text.sent_in_syl_average_len,
-                        Novel.sent_in_words_average_len: text.sent_word_count_average,
+                        Novel.sent_in_words_average_len: text.sent_in_words_average_len,
 
                         Novel.word_in_syl_average_len: text.word_in_syl_average_len,
                         Novel.word_in_sym_average_len: text.word_in_sym_average_len,
@@ -226,5 +234,25 @@ def recalculate_metrics():
                     print("Skipping")
 
 
+def calculate_direct_speech():
+    with session_scope() as query_session:
+        novels = query_session.query(Novel).filter(and_(Novel.text.isnot(None),
+                                                        Novel.rating.isnot(None))).all()
+        for novel in novels:
+            print(novel.title)
+            with session_scope() as session:
+                text = Text(novel.text)
+                if text.word_count:
+                    text.count_metrics()
+                    metrics = {
+                        Novel.interrogative_sent_word_ratio: text.interrogative_sent_word_ratio,
+                        Novel.exclamative_sent_word_ratio: text.exclamative_sent_word_ratio
+                    }
+                    session.query(Novel).filter(Novel.id == novel.id).update(metrics)
+                    print("Done")
+                else:
+                    print("Skipping")
+
+
 if __name__ == '__main__':
-    recalculate_metrics()
+    calculate_direct_speech()

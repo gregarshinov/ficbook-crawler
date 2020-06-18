@@ -28,5 +28,6 @@ def count_tags():
         with open("tags.pickle", 'wb') as file:
             pickle.dump(tag_counter, file)
 
+
 if __name__ == '__main__':
     count_tags()

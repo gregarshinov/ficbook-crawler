@@ -65,7 +65,7 @@ def parse_fic(page_html):
         tags = [el.text for el in tags_el.find_all('a')]
     else:
         tags = []
-    author = soup.select_one('div.creator-info > a').text
+    author = getattr(soup.select_one('div.creator-info > a'), 'text', '')
     author_notes = ''
     if author_notes_el := soup.find('strong', text='Примечания автора:'):
         author_notes = author_notes_el.find_all_next('div', limit=1)[0].text

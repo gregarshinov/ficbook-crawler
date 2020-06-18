@@ -1,7 +1,7 @@
-from .constants import punktuation_mark_re, direct_speech_re, SSP
+from .constants import DIRECT_SPEECH_RE, SSP, EXCLAMATION_RE, INTERROGATION_RE
 from .utils import SentenceAnalyzer
 from typing import List
-from nltk import sent_tokenize, word_tokenize
+from nltk import sent_tokenize
 from lazy_property import LazyProperty
 import random
 import math
@@ -30,24 +30,17 @@ DICT = {}
 
 class Sentence:
     text: str
-    is_exclamative: bool
-    is_interrogative: bool
     words: List[Word]
 
     def __init__(self, text: str):
         self.text = text
         self.words = []
-        self.__guess_punctuation()
         self.__parse_words()
         self.syllable_count = 0
         self.symbol_count = 0
         self.average_symbol_count = .0
         self.average_syllable_count = .0
         self.__count_metrics()
-
-    def __guess_punctuation(self):
-        for name, expression in punktuation_mark_re.items():
-            setattr(self, name, bool(expression.match(self.text)))
 
     def __parse_words(self):
         for text, pos in SentenceAnalyzer(self.text):
@@ -130,7 +123,7 @@ class Text:
     def direct_speech_word_ratio(self):
         direct_speech_occurences = []
         for sent in self:
-            direct_speech_occurences.extend([Sentence(speech) for speech in direct_speech_re.findall(str(sent))])
+            direct_speech_occurences.extend([Sentence(speech) for speech in DIRECT_SPEECH_RE.findall(str(sent))])
         return sum(len(sent) for sent in direct_speech_occurences if len(sent)) / self.word_count
 
     def count_metrics(self):
@@ -140,10 +133,6 @@ class Text:
             self.total_ad += sent.part_of_speech_count(["A", "ADV", "ADVPRO"])
             self.total_syllables += sent.syllable_count
             self.total_symbols += sent.symbol_count
-            if sent.is_exclamative:
-                self.total_exclamative += len(sent)
-            if sent.is_interrogative:
-                self.total_interrogative += len(sent)
             for word in sent:
                 self.words.append(word)
                 if word.length('syl') > 2:
@@ -184,11 +173,11 @@ class Text:
 
     @property
     def interrogative_sent_word_ratio(self):
-        return self.total_interrogative / self.word_count
+        return len(INTERROGATION_RE.findall(self.text)) / len(self)
 
     @property
     def exclamative_sent_word_ratio(self):
-        return self.total_exclamative / self.word_count
+        return len(EXCLAMATION_RE.findall(self.text)) / len(self)
 
     @property
     def smog(self):

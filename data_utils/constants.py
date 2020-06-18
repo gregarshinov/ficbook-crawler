@@ -2,10 +2,10 @@ import re
 
 from nltk import SyllableTokenizer
 
-punktuation_mark_re = {'is_exclamative': re.compile(r'.+!$'),
-                       'is_interrogative': re.compile(r'.+\?!?$')}
+EXCLAMATION_RE = re.compile(r'!+')
+INTERROGATION_RE = re.compile(r'\?+')
 
-direct_speech_re = re.compile(r':?\s?[–«](\s?[А-Я].+?)[,.?!»]', re.DOTALL)
+DIRECT_SPEECH_RE = re.compile(r':?\s?[–\-«\"](\s?[А-Я].+?)(?:[\-,.?!»\"]|\.\.\.)', re.DOTALL)
 
 RUSSIAN_SONORITY_HIERARCHY = [
     "уеыаоэёюияь",  # vowels.
