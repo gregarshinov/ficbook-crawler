@@ -1,5 +1,7 @@
 from contextlib import contextmanager
 from . import Session
+from typing import Generator
+
 
 @contextmanager
 def session_scope() -> Session:
@@ -13,4 +15,3 @@ def session_scope() -> Session:
         raise
     finally:
         session.close()
-
